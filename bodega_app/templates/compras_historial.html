@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+{% block title %}Historial de Compras{% endblock %}
+{% block content %}
+<h1>Historial de Compras</h1>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto">
+    <select name="producto" class="form-select">
+      <option value="">-- Todos los productos --</option>
+      {% for p in productos %}
+        <option value="{{ p.id }}" {% if prod_sel|default:'' == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-secondary" type="submit">Filtrar</button>
+  </div>
+</form>
+
+<table class="table table-bordered">
+  <thead>
+    <tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Precio Total</th><th>Proveedor</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for c in compras %}
+    <tr>
+      <td>{{ c.fecha|date:"Y-m-d H:i" }}</td>
+      <td>{{ c.producto.nombre }}</td>
+      <td>{{ c.cantidad }}</td>
+      <td>{{ c.precio_total }}</td>
+      <td>{{ c.proveedor }}</td>
+      <td>
+        <a class="btn btn-sm btn-warning" href="{% url 'compras_editar' c.id %}">Editar</a>
+        <a class="btn btn-sm btn-danger" href="{% url 'compras_eliminar' c.id %}">Eliminar</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Sin compras.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

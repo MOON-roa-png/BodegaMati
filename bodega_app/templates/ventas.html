@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+{% block title %}Ventas{% endblock %}
+
+{% block content %}
+<h1>Ventas</h1>
+
+{% if messages %}
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+  {% endfor %}
+{% endif %}
+
+<form method="POST" class="mb-4">
+  {% csrf_token %}
+  <div class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label">Producto</label>
+      <select name="producto_id" class="form-select">
+        {% for p in productos %}
+          <option value="{{ p.id }}">{{ p.nombre }} (Stock: {{ p.stock }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Cantidad</label>
+      <input name="cantidad" type="number" class="form-control" min="1" value="1" required>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Tipo</label>
+      <select name="tipo" class="form-select">
+        <option value="minorista">Minorista</option>
+        <option value="mayorista">Mayorista</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100" name="accion" value="agregar">Agregar</button>
+    </div>
+  </div>
+</form>
+
+<h2>Carrito</h2>
+<table class="table table-bordered align-middle">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Precio</th>
+      <th>Total</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in carrito %}
+    <tr>
+      <td>{{ forloop.counter0 }}</td>
+      <td>{{ item.producto }}</td>
+      <td>
+        <form method="post" action="{% url 'bodega:ventas_modificar_item' forloop.counter0 %}" class="d-flex gap-2">
+          {% csrf_token %}
+          <input name="cantidad" type="number" class="form-control" min="1" value="{{ item.cantidad }}">
+          <button class="btn btn-sm btn-outline-secondary">Actualizar</button>
+        </form>
+      </td>
+      <td>{{ item.precio }}</td>
+      <td>{{ item.total }}</td>
+      <td class="text-nowrap">
+        <a class="btn btn-sm btn-outline-danger" href="{% url 'bodega:ventas_eliminar_item' forloop.counter0 %}">Eliminar</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Carrito vacío.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3 class="mt-3">Total: {{ total_carrito }}</h3>
+
+<div class="d-flex gap-2">
+  <a href="{% url 'bodega:confirmar_venta' %}" class="btn btn-success">Confirmar Venta</a>
+  <a href="{% url 'bodega:ventas_vaciar' %}" class="btn btn-outline-secondary">Vaciar Carrito</a>
+</div>
+{% endblock %}

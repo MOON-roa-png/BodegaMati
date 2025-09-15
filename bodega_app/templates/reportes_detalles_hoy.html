@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+{% block title %}Detalle de Hoy{% endblock %}
+{% block content %}
+<h1>Detalle por producto (hoy)</h1>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Vendidos hoy</th>
+      <th>Comprados hoy</th>
+      <th>Stock actual</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in filas %}
+    <tr>
+      <td>{{ f.producto }}</td>
+      <td>{{ f.vendidos_hoy }}</td>
+      <td>{{ f.comprados_hoy }}</td>
+      <td>{{ f.stock_actual }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">No hay datos hoy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

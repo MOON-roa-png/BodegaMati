@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head><title>Login - BodegaMati</title></head>
+<body class="container mt-4">
+  <h2>Login</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Ingresar</button>
+  </form>
+</body>
+</html>

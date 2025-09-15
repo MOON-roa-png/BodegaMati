@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h1 class="me-auto">Productos</h1>
+  <a class="btn btn-primary" href="{% url 'bodega:agregar_productos' %}">Agregar</a>
+</div>
+<table class="table table-bordered">
+  <thead><tr>
+    <th>Nombre</th><th>Proveedor</th><th>Precio Compra</th><th>Precio Venta</th><th>Stock</th><th>Stock Mín.</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for p in productos %}
+      <tr class="{% if p.en_riesgo %}table-warning{% endif %}">
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.proveedor }}</td>
+        <td>{{ p.precio_compra }}</td>
+        <td>{{ p.precio_venta }}</td>
+        <td>{{ p.stock }}</td>
+        <td>{{ p.stock_minimo }}</td>
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'bodega:editar_productos' p.id %}">Editar</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'bodega:eliminar_productos' p.id %}">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">Sin productos.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

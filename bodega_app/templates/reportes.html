@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Reportes de hoy</h1>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5 class="mb-2">Total Ventas (hoy)</h5>
+      <div class="fs-3 fw-bold">{{ total_ventas|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5 class="mb-2">Total Compras (hoy)</h5>
+      <div class="fs-3 fw-bold">{{ total_compras|default:0 }}</div>
+    </div>
+  </div>
+</div>
+
+<h3 class="mt-4">Ventas por producto (hoy)</h3>
+<table class="table table-sm table-striped align-middle">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Producto</th>
+      <th class="text-end">Cantidad</th>
+      <th class="text-end">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in ventas_detalle_hoy %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ r.producto__nombre }}</td>
+        <td class="text-end">{{ r.cantidad }}</td>
+        <td class="text-end">{{ r.total }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">Sin ventas hoy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3 class="mt-4">Compras por producto (hoy)</h3>
+<table class="table table-sm table-striped align-middle">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Producto</th>
+      <th class="text-end">Cantidad</th>
+      <th class="text-end">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in compras_detalle_hoy %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ r.producto__nombre }}</td>
+        <td class="text-end">{{ r.cantidad }}</td>
+        <td class="text-end">{{ r.total }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">Sin compras hoy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block content %}
+<h1>Proveedores</h1>
+
+<form method="post" action="{% url 'bodega:proveedores' %}" class="row g-2 mb-3">
+  {% csrf_token %}
+  <div class="col-md-4">
+    <input name="nombre" class="form-control" placeholder="Nombre" required>
+  </div>
+  <div class="col-md-4">
+    <input name="contacto" class="form-control" placeholder="Contacto (opcional)">
+  </div>
+  <div class="col-md-4">
+    <button class="btn btn-primary">Agregar</button>
+  </div>
+</form>
+
+<table class="table table-striped">
+  <thead><tr><th>#</th><th>Nombre</th><th>Contacto</th><th></th></tr></thead>
+  <tbody>
+    {% for p in proveedores %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ p.nombre }}</td>
+      <td>{{ p.contacto|default:"—" }}</td>
+      <td class="text-nowrap">
+        <form method="post" action="{% url 'bodega:proveedores_editar' p.id %}" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="nombre" value="{{ p.nombre }}">
+          <input type="hidden" name="contacto" value="{{ p.contacto }}">
+          <button class="btn btn-sm btn-outline-secondary">Guardar (inline)</button>
+        </form>
+        <a class="btn btn-sm btn-outline-danger" href="{% url 'bodega:proveedores_eliminar' p.id %}">Eliminar</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Sin proveedores.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+{% block title %}Historial de Ventas{% endblock %}
+{% block content %}
+<h1>Historial de Ventas</h1>
+<table class="table table-bordered">
+  <thead>
+    <tr><th>Fecha</th><th>Tipo</th><th>Total</th><th>Detalles</th></tr>
+  </thead>
+  <tbody>
+    {% for v in ventas %}
+    <tr>
+      <td>{{ v.fecha|date:"Y-m-d H:i" }}</td>
+      <td>{{ v.get_tipo_display }}</td>
+      <td>{{ v.total }}</td>
+      <td>
+        <ul class="mb-2">
+          {% for d in v.detalles.all %}
+          <li>
+            {{ d.producto.nombre }} - Cant: {{ d.cantidad }} - Subtotal: {{ d.subtotal }}
+            <a class="btn btn-sm btn-outline-warning" href="{% url 'ventas_editar_detalle' d.id %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'ventas_eliminar_detalle' d.id %}">Eliminar</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Sin ventas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a class="btn btn-secondary" href="{% url 'ventas' %}">Ir a Vender</a>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block title %}Editar Detalle de Venta{% endblock %}
+{% block content %}
+<h1>Editar detalle de venta</h1>
+<p><strong>Producto:</strong> {{ detalle.producto.nombre }}</p>
+<p><strong>Cantidad actual:</strong> {{ detalle.cantidad }}</p>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn btn-primary" type="submit">Guardar</button>
+  <a class="btn btn-secondary" href="{% url 'ventas_historial' %}">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<h3>{{ titulo }}</h3>
+<p>¿Confirmás la acción sobre: <strong>{{ obj }}</strong>?</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-danger">Sí, confirmar</button>
+  <a class="btn btn-secondary" href="javascript:history.back()">Cancelar</a>
+</form>
+{% endblock %}
