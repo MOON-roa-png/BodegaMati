@@ -1,17 +1,12 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.db.models import F, Sum, DecimalField, ExpressionWrapper
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
-# --- NUEVOS imports para la parte de usuarios ---
-from django.contrib.auth import get_user_model
-from .forms import RegistroUsuarioForm, PrimerAdminForm
-from .decorators import rol_admin_required
-# ------------------------------------------------
 
 from .models import Compra, DetalleVenta, Producto, Proveedor, Venta
 
@@ -26,6 +21,70 @@ def _get_carrito(request):
 def _guardar_carrito(request, carrito):
     request.session["carrito"] = carrito
     request.session.modified = True
+
+
+# =========================
+# Registro inicial (primer superusuario)
+# =========================
+def registro_inicial(request):
+    """
+    Si aún no existen usuarios, muestra un form simple para crear el primer superusuario.
+    Si ya hay algún usuario, redirige al login.
+    """
+    User = get_user_model()
+    if User.objects.exists():
+        return redirect("bodega:login")
+
+    if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+        if not username or not password:
+            messages.error(request, "Usuario y contraseña son obligatorios.")
+        else:
+            # Crea superusuario (is_superuser + is_staff) y con rol admin si tu modelo lo tiene.
+            user = User.objects.create_superuser(username=username, password=password)
+            # Si tu modelo tiene campo 'rol', lo dejamos en 'admin'
+            if hasattr(user, "rol"):
+                user.rol = "admin"
+                user.save(update_fields=["rol"])
+            messages.success(request, "Administrador creado. Inicia sesión.")
+            return redirect("bodega:login")
+
+    return render(request, "registro_inicial.html")
+
+
+# =========================
+# Crear usuarios (solo admin)
+# =========================
+def _es_admin(user):
+    # Acepta admin por rol o superusuario
+    return user.is_authenticated and (getattr(user, "rol", "empleado") == "admin" or user.is_superuser)
+
+
+@login_required(login_url="/usuarios/login/")
+@user_passes_test(_es_admin, login_url="/usuarios/login/")
+def usuarios_crear(request):
+    """
+    Form para que un admin cree nuevos usuarios (empleados o admin).
+    """
+    User = get_user_model()
+    if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+        rol = request.POST.get("rol") or "empleado"
+        if not username or not password:
+            messages.error(request, "Usuario y contraseña son obligatorios.")
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, "Ese usuario ya existe.")
+        else:
+            user = User.objects.create_user(username=username, password=password)
+            if hasattr(user, "rol"):
+                user.rol = rol
+                user.save(update_fields=["rol"])
+            messages.success(request, "Usuario creado correctamente.")
+            return redirect("bodega:dashboard")
+
+    return render(request, "usuarios_crear.html")
 
 
 # =========================
@@ -124,14 +183,10 @@ def eliminar_productos(request, pk):
 
 
 # =========================
-# PROVEEDORES  (funcional)
+# Proveedores
 # =========================
 @login_required(login_url="/usuarios/login/")
 def proveedores_list(request):
-    """
-    GET: lista proveedores
-    POST: alta rápida desde el mismo listado (si el form hace POST a 'proveedores')
-    """
     if request.method == "POST":
         nombre = (request.POST.get("nombre") or "").strip()
         contacto = (request.POST.get("contacto") or "").strip()
@@ -148,7 +203,6 @@ def proveedores_list(request):
 
 @login_required(login_url="/usuarios/login/")
 def proveedores_agregar(request):
-    # Si tu formulario apunta específicamente a esta URL
     if request.method != "POST":
         return redirect("bodega:proveedores")
 
@@ -223,7 +277,7 @@ def compras(request):
             prod = Producto.objects.create(
                 nombre=nombre_nuevo,
                 precio_compra=precio_compra,
-                precio_venta=precio_compra,  # ajustá lógica según tu negocio
+                precio_venta=precio_compra,  # Ajusta según tu negocio
                 stock=0,
             )
 
@@ -438,15 +492,10 @@ def confirmar_venta(request):
 
 
 # =========================
-# REPORTES  (corregido)
+# Reportes
 # =========================
 @login_required(login_url="/usuarios/login/")
 def reportes(request):
-    """
-    Calculamos cada subtotal con precio_venta actual del producto.
-    Evitamos 'aggregate dentro de aggregate' anotando 'subtotal' primero
-    y luego haciendo Sum sobre ese alias.
-    """
     hoy = timezone.localdate()
 
     # 1) Detalles de hoy + subtotal
@@ -496,53 +545,3 @@ def reportes(request):
             "compras_detalle_hoy": compras_detalle_hoy,
         },
     )
-
-
-# =========================================================
-# NUEVO: Setup (primer superusuario) y creación de usuarios
-# =========================================================
-def primer_admin(request):
-    """
-    Permite crear el PRIMER superusuario vía web sólo si no existe ningún usuario.
-    Si ya existe algún usuario, redirige al login.
-    """
-    User = get_user_model()
-    if User.objects.exists():
-        return redirect('bodega:login')
-
-    if request.method == "POST":
-        form = PrimerAdminForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.rol = 'admin'
-            user.is_staff = True
-            user.is_superuser = True
-            user.save()
-            messages.success(request, "Súperusuario creado. Ya puedes iniciar sesión.")
-            return redirect('bodega:login')
-    else:
-        form = PrimerAdminForm()
-
-    return render(request, "registro_inicial.html", {"form": form})
-
-
-@login_required(login_url="/usuarios/login/")
-@rol_admin_required
-def usuarios_crear(request):
-    """
-    Vista para que un admin cree nuevos usuarios (rol empleado o admin).
-    """
-    if request.method == "POST":
-        form = RegistroUsuarioForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            rol = form.cleaned_data.get("rol", "empleado")
-            user.rol = rol
-            user.is_staff = True if rol == 'admin' else False
-            user.save()
-            messages.success(request, f"Usuario '{user.username}' creado con rol {rol}.")
-            return redirect('bodega:usuarios_crear')
-    else:
-        form = RegistroUsuarioForm()
-
-    return render(request, "usuarios_crear.html", {"form": form})
