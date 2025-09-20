@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from .models import Compra, DetalleVenta, Producto, Proveedor, Venta
 
+Usuario = get_user_model()
+
 
 # =========================
 # Helpers carrito (sesión)
@@ -24,65 +26,84 @@ def _guardar_carrito(request, carrito):
 
 
 # =========================
-# Registro inicial (primer superusuario)
+# Helpers de permisos
+# =========================
+def es_admin(user):
+    return user.is_authenticated and getattr(user, "rol", "") == "admin"
+
+
+# =========================
+# Setup inicial de usuarios
 # =========================
 def registro_inicial(request):
     """
-    Si aún no existen usuarios, muestra un form simple para crear el primer superusuario.
-    Si ya hay algún usuario, redirige al login.
+    Si no hay usuarios en la BD, permite crear el primer administrador.
+    Si ya existe al menos un usuario, redirige al login.
     """
-    User = get_user_model()
-    if User.objects.exists():
+    if Usuario.objects.exists():
         return redirect("bodega:login")
 
     if request.method == "POST":
         username = (request.POST.get("username") or "").strip()
-        password = request.POST.get("password") or ""
+        password = (request.POST.get("password") or "").strip()
+
         if not username or not password:
             messages.error(request, "Usuario y contraseña son obligatorios.")
-        else:
-            # Crea superusuario (is_superuser + is_staff) y con rol admin si tu modelo lo tiene.
-            user = User.objects.create_superuser(username=username, password=password)
-            # Si tu modelo tiene campo 'rol', lo dejamos en 'admin'
-            if hasattr(user, "rol"):
-                user.rol = "admin"
-                user.save(update_fields=["rol"])
-            messages.success(request, "Administrador creado. Inicia sesión.")
-            return redirect("bodega:login")
+            return render(request, "registro_inicial.html")
+
+        if Usuario.objects.filter(username=username).exists():
+            messages.error(request, "Ese nombre de usuario ya existe.")
+            return render(request, "registro_inicial.html")
+
+        if len(password) < 4:
+            messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
+            return render(request, "registro_inicial.html")
+
+        # Crear admin
+        user = Usuario.objects.create_user(username=username, password=password)
+        user.rol = "admin"
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+
+        messages.success(request, "Administrador creado. Ya puedes iniciar sesión.")
+        return redirect("bodega:login")
 
     return render(request, "registro_inicial.html")
 
 
-# =========================
-# Crear usuarios (solo admin)
-# =========================
-def _es_admin(user):
-    # Acepta admin por rol o superusuario
-    return user.is_authenticated and (getattr(user, "rol", "empleado") == "admin" or user.is_superuser)
-
-
-@login_required(login_url="/usuarios/login/")
-@user_passes_test(_es_admin, login_url="/usuarios/login/")
+@user_passes_test(es_admin, login_url="/usuarios/login/")
 def usuarios_crear(request):
     """
-    Form para que un admin cree nuevos usuarios (empleados o admin).
+    Crea usuarios (empleado o admin) desde un formulario simple.
+    Solo para administradores.
     """
-    User = get_user_model()
     if request.method == "POST":
         username = (request.POST.get("username") or "").strip()
-        password = request.POST.get("password") or ""
-        rol = request.POST.get("rol") or "empleado"
+        password = (request.POST.get("password") or "").strip()
+        rol = (request.POST.get("rol") or "empleado").strip()
+
         if not username or not password:
             messages.error(request, "Usuario y contraseña son obligatorios.")
-        elif User.objects.filter(username=username).exists():
-            messages.error(request, "Ese usuario ya existe.")
-        else:
-            user = User.objects.create_user(username=username, password=password)
-            if hasattr(user, "rol"):
-                user.rol = rol
-                user.save(update_fields=["rol"])
-            messages.success(request, "Usuario creado correctamente.")
-            return redirect("bodega:dashboard")
+            return render(request, "usuarios_crear.html")
+
+        if Usuario.objects.filter(username=username).exists():
+            messages.error(request, "Ese nombre de usuario ya existe.")
+            return render(request, "usuarios_crear.html")
+
+        # Validar rol según tu modelo
+        if rol not in dict(Usuario.ROLES):
+            messages.error(request, "Rol inválido.")
+            return render(request, "usuarios_crear.html")
+
+        user = Usuario.objects.create_user(username=username, password=password)
+        user.rol = rol
+        user.is_staff = True if rol == "admin" else False
+        user.is_superuser = True if rol == "admin" else False
+        user.save()
+
+        messages.success(request, "Usuario creado correctamente.")
+        return redirect("bodega:dashboard")
 
     return render(request, "usuarios_crear.html")
 
@@ -121,7 +142,7 @@ def productos(request):
 
 
 @login_required(login_url="/usuarios/login/")
-def agregar_productos(request):  # plural (coincide con urls.py)
+def agregar_productos(request):
     if request.method == "POST":
         nombre = request.POST.get("nombre", "").strip()
         precio_compra = request.POST.get("precio_compra", "").strip()
@@ -277,7 +298,7 @@ def compras(request):
             prod = Producto.objects.create(
                 nombre=nombre_nuevo,
                 precio_compra=precio_compra,
-                precio_venta=precio_compra,  # Ajusta según tu negocio
+                precio_venta=precio_compra,
                 stock=0,
             )
 
@@ -498,7 +519,6 @@ def confirmar_venta(request):
 def reportes(request):
     hoy = timezone.localdate()
 
-    # 1) Detalles de hoy + subtotal
     detalles_con_subtotal = (
         DetalleVenta.objects
         .filter(venta__fecha__date=hoy)
@@ -510,7 +530,6 @@ def reportes(request):
         )
     )
 
-    # 2) Agrupar por producto
     ventas_detalle_hoy = (
         detalles_con_subtotal
         .values("producto__id", "producto__nombre")
@@ -523,7 +542,6 @@ def reportes(request):
 
     total_ventas = ventas_detalle_hoy.aggregate(s=Sum("total"))["s"] or Decimal("0")
 
-    # 3) Compras de hoy por producto
     compras_detalle_hoy = (
         Compra.objects.filter(fecha__date=hoy)
         .values("producto__id", "producto__nombre")
