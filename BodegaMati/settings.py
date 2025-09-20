@@ -1,30 +1,49 @@
 # BodegaMati/settings.py
 from pathlib import Path
 import os
-import dj_database_url  # <-- lee DATABASE_URL en despliegue
+import dj_database_url
+from django.core.management.utils import get_random_secret_key
+from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # -----------------------------
 # Seguridad / Entorno
 # -----------------------------
-# Usa variables de entorno en producción. En local puedes dejar DEBUG=1.
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-key-change-me")
-DEBUG = os.environ.get("DEBUG", "1") in ("1", "true", "True")
+# En local puedes dejar DEBUG=1. En Render pon DEBUG=0.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-" + get_random_secret_key())
+DEBUG = os.environ.get("DEBUG", "1").lower() in ("1", "true", "yes")
 
-# Hosts permitidos (separa por comas). En Render/Railway setea tu dominio aquí.
-ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
-
-# CSRF: orígenes confiables (con esquema) para panel y formularios.
-# Ej: "https://tuapp.onrender.com,https://midominio.com"
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost:8000").split(",") if o.strip()
+# Hosts permitidos (separados por coma). En Render agrega tu dominio aquí o
+# deja que se autoconfigure con RENDER_EXTERNAL_URL (ver abajo).
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
 ]
 
-# Si estás detrás de proxy (Render/Railway) confía en X-Forwarded-Proto para HTTPS
+# CSRF: orígenes confiables (con esquema). Agrega tu URL de Render si quieres,
+# o deja que se autoconfigure más abajo.
+_default_csrf = "http://localhost:8000,http://127.0.0.1:8000"
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", _default_csrf).split(",") if o.strip()
+]
+
+# Si Render define RENDER_EXTERNAL_URL (p.ej. https://tuapp.onrender.com)
+# lo agregamos automáticamente a ALLOWED_HOSTS y CSRF_TRUSTED_ORIGINS.
+_render_url = os.environ.get("RENDER_EXTERNAL_URL")
+if _render_url:
+    parsed = urlparse(_render_url)
+    if parsed.hostname and parsed.hostname not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(parsed.hostname)
+    if _render_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_render_url)
+
+# Respeta X-Forwarded-Proto detrás de proxy (Render)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Cookies seguras en prod
+# Forzar HTTPS opcional en prod (pon SECURE_SSL_REDIRECT=1 en Render si quieres)
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0").lower() in ("1", "true", "yes")
+
+# Cookies seguras cuando DEBUG=0
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
@@ -82,8 +101,8 @@ WSGI_APPLICATION = "BodegaMati.wsgi.application"
 # -----------------------------
 # Base de datos
 # -----------------------------
-# En despliegue: usa DATABASE_URL (Render/Railway te lo da).
-# En local: cae al Postgres que ya tienes (localhost:5433).
+# En despliegue: usa DATABASE_URL (Render te la da al crear el Postgres).
+# En local: por defecto conecta al Postgres de tu máquina (5433), como ya usas.
 DATABASES = {
     "default": dj_database_url.config(
         default="postgres://postgres:postgres@localhost:5433/postgres",
@@ -116,7 +135,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# En Django 5.x usa STORAGES para WhiteNoise
+# Django 5.x: STORAGES con WhiteNoise
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
