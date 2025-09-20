@@ -105,7 +105,7 @@ WSGI_APPLICATION = "BodegaMati.wsgi.application"
 # En local: por defecto conecta al Postgres de tu máquina (5433), como ya usas.
 DATABASES = {
     "default": dj_database_url.config(
-        default="postgres://postgres:postgres@localhost:5433/postgres",
+        default=" postgresql://bodega_db_smnc_user:soUbIeZZwvCEthyW4MdmjRipf429qPz0@dpg-d37cpjer433s73el3rtg-a/bodega_db_smnc",
         conn_max_age=600,
         ssl_require=False if DEBUG else True,
     )
