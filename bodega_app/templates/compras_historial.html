@@ -30,8 +30,8 @@
       <td>{{ c.precio_total }}</td>
       <td>{{ c.proveedor }}</td>
       <td>
-        <a class="btn btn-sm btn-warning" href="{% url 'compras_editar' c.id %}">Editar</a>
-        <a class="btn btn-sm btn-danger" href="{% url 'compras_eliminar' c.id %}">Eliminar</a>
+        <a class="btn btn-sm btn-warning" href="{% url 'bodega:compras_editar' c.id %}">Editar</a>
+        <a class="btn btn-sm btn-danger" href="{% url 'bodega:compras_eliminar' c.id %}">Eliminar</a>
       </td>
     </tr>
     {% empty %}

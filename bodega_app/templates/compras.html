@@ -12,7 +12,7 @@
 <table class="table table-bordered">
   <thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Precio Total</th><th>Proveedor</th><th></th></tr></thead>
   <tbody>
-    {% for c in compras %}
+    {% for c in ultimas %}
     <tr>
       <td>{{ c.fecha|date:"Y-m-d H:i" }}</td>
       <td>{{ c.producto.nombre }}</td>
@@ -20,8 +20,8 @@
       <td>{{ c.precio_total }}</td>
       <td>{{ c.proveedor }}</td>
       <td class="text-nowrap">
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'compras_editar' c.id %}">Editar</a>
-        <a class="btn btn-sm btn-outline-danger" href="{% url 'compras_eliminar' c.id %}">Eliminar</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'bodega:compras_editar' c.id %}">Editar</a>
+        <a class="btn btn-sm btn-outline-danger" href="{% url 'bodega:compras_eliminar' c.id %}">Eliminar</a>
       </td>
     </tr>
     {% empty %}

@@ -10,25 +10,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # -----------------------------
 # Seguridad / Entorno
 # -----------------------------
-# En local puedes dejar DEBUG=1. En Render pon DEBUG=0.
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-" + get_random_secret_key())
 DEBUG = os.environ.get("DEBUG", "1").lower() in ("1", "true", "yes")
 
-# Hosts permitidos (separados por coma). En Render agrega tu dominio aquí o
-# deja que se autoconfigure con RENDER_EXTERNAL_URL (ver abajo).
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
 ]
 
-# CSRF: orígenes confiables (con esquema). Agrega tu URL de Render si quieres,
-# o deja que se autoconfigure más abajo.
 _default_csrf = "http://localhost:8000,http://127.0.0.1:8000"
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", _default_csrf).split(",") if o.strip()
 ]
 
-# Si Render define RENDER_EXTERNAL_URL (p.ej. https://tuapp.onrender.com)
-# lo agregamos automáticamente a ALLOWED_HOSTS y CSRF_TRUSTED_ORIGINS.
 _render_url = os.environ.get("RENDER_EXTERNAL_URL")
 if _render_url:
     parsed = urlparse(_render_url)
@@ -37,13 +30,8 @@ if _render_url:
     if _render_url not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_render_url)
 
-# Respeta X-Forwarded-Proto detrás de proxy (Render)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-# Forzar HTTPS opcional en prod (pon SECURE_SSL_REDIRECT=1 en Render si quieres)
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0").lower() in ("1", "true", "yes")
-
-# Cookies seguras cuando DEBUG=0
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
@@ -69,7 +57,6 @@ LOGIN_REDIRECT_URL = "/"
 # -----------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise para servir estáticos en producción
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,11 +88,10 @@ WSGI_APPLICATION = "BodegaMati.wsgi.application"
 # -----------------------------
 # Base de datos
 # -----------------------------
-# En despliegue: usa DATABASE_URL (Render te la da al crear el Postgres).
-# En local: por defecto conecta al Postgres de tu máquina (5433), como ya usas.
 DATABASES = {
     "default": dj_database_url.config(
-        default=" postgresql://bodega_db_smnc_user:soUbIeZZwvCEthyW4MdmjRipf429qPz0@dpg-d37cpjer433s73el3rtg-a/bodega_db_smnc",
+        # ¡OJO! Sin espacio al inicio:
+        default="postgresql://bodega_db_smnc_user:soUbIeZZwvCEthyW4MdmjRipf429qPz0@dpg-d37cpjer433s73el3rtg-a/bodega_db_smnc",
         conn_max_age=600,
         ssl_require=False if DEBUG else True,
     )
@@ -124,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # -----------------------------
 # i18n / tz
 # -----------------------------
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
@@ -135,13 +121,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Django 5.x: STORAGES con WhiteNoise
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
-# -----------------------------
-# Clave primaria por defecto
-# -----------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -17,8 +17,6 @@
           {% for d in v.detalles.all %}
           <li>
             {{ d.producto.nombre }} - Cant: {{ d.cantidad }} - Subtotal: {{ d.subtotal }}
-            <a class="btn btn-sm btn-outline-warning" href="{% url 'ventas_editar_detalle' d.id %}">Editar</a>
-            <a class="btn btn-sm btn-outline-danger" href="{% url 'ventas_eliminar_detalle' d.id %}">Eliminar</a>
           </li>
           {% endfor %}
         </ul>
@@ -29,5 +27,5 @@
     {% endfor %}
   </tbody>
 </table>
-<a class="btn btn-secondary" href="{% url 'ventas' %}">Ir a Vender</a>
+<a class="btn btn-secondary" href="{% url 'bodega:ventas' %}">Ir a Vender</a>
 {% endblock %}

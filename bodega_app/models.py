@@ -2,7 +2,6 @@ from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
 class Usuario(AbstractUser):
     ROLES = (
         ('admin', 'Administrador'),
@@ -13,14 +12,12 @@ class Usuario(AbstractUser):
     def __str__(self):
         return self.username
 
-
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     contacto = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
-
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -36,7 +33,6 @@ class Producto(models.Model):
     def en_riesgo(self):
         return self.stock <= self.stock_minimo
 
-
 class Venta(models.Model):
     TIPO_VENTA = [
         ('minorista', 'Minorista'),
@@ -49,17 +45,14 @@ class Venta(models.Model):
     def __str__(self):
         return f"Venta {self.id} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
 
-
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    # Precio del producto en el momento de la venta (trazabilidad)
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=0, default=0)
 
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre}"
-
 
 class Compra(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='compras')
