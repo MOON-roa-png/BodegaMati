@@ -1,5 +1,6 @@
 from django import forms
-from .models import Producto, Proveedor, Compra
+from django.contrib.auth.forms import UserCreationForm
+from .models import Producto, Proveedor, Compra, Usuario
 
 
 class ProductoForm(forms.ModelForm):
@@ -40,3 +41,28 @@ class CompraForm(forms.ModelForm):
         if p <= 0:
             raise forms.ValidationError('El precio total debe ser mayor a 0.')
         return p
+
+
+# --- NUEVO: registro general de usuarios (por admin) ---
+class RegistroUsuarioForm(UserCreationForm):
+    rol = forms.ChoiceField(choices=Usuario.ROLES, initial='empleado')
+
+    class Meta(UserCreationForm.Meta):
+        model = Usuario
+        fields = ("username", "email", "rol")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Que email sea requerido
+        self.fields["email"].required = True
+
+
+# --- NUEVO: para crear el primer súperusuario cuando no hay usuarios ---
+class PrimerAdminForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = Usuario
+        fields = ("username", "email")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].required = True

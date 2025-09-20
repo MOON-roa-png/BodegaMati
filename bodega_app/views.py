@@ -7,6 +7,12 @@ from django.db.models import F, Sum, DecimalField, ExpressionWrapper
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+# --- NUEVOS imports para la parte de usuarios ---
+from django.contrib.auth import get_user_model
+from .forms import RegistroUsuarioForm, PrimerAdminForm
+from .decorators import rol_admin_required
+# ------------------------------------------------
+
 from .models import Compra, DetalleVenta, Producto, Proveedor, Venta
 
 
@@ -490,3 +496,53 @@ def reportes(request):
             "compras_detalle_hoy": compras_detalle_hoy,
         },
     )
+
+
+# =========================================================
+# NUEVO: Setup (primer superusuario) y creación de usuarios
+# =========================================================
+def primer_admin(request):
+    """
+    Permite crear el PRIMER superusuario vía web sólo si no existe ningún usuario.
+    Si ya existe algún usuario, redirige al login.
+    """
+    User = get_user_model()
+    if User.objects.exists():
+        return redirect('bodega:login')
+
+    if request.method == "POST":
+        form = PrimerAdminForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.rol = 'admin'
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+            messages.success(request, "Súperusuario creado. Ya puedes iniciar sesión.")
+            return redirect('bodega:login')
+    else:
+        form = PrimerAdminForm()
+
+    return render(request, "registro_inicial.html", {"form": form})
+
+
+@login_required(login_url="/usuarios/login/")
+@rol_admin_required
+def usuarios_crear(request):
+    """
+    Vista para que un admin cree nuevos usuarios (rol empleado o admin).
+    """
+    if request.method == "POST":
+        form = RegistroUsuarioForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            rol = form.cleaned_data.get("rol", "empleado")
+            user.rol = rol
+            user.is_staff = True if rol == 'admin' else False
+            user.save()
+            messages.success(request, f"Usuario '{user.username}' creado con rol {rol}.")
+            return redirect('bodega:usuarios_crear')
+    else:
+        form = RegistroUsuarioForm()
+
+    return render(request, "usuarios_crear.html", {"form": form})

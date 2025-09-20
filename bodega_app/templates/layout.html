@@ -20,6 +20,9 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'bodega:compras' %}">Compras</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'bodega:ventas' %}">Ventas</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'bodega:reportes' %}">Reportes</a></li>
+        {% if user.is_authenticated and (user.is_superuser or user.rol == 'admin') %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'bodega:usuarios_crear' %}">Usuarios</a></li>
+        {% endif %}
       </ul>
       <ul class="navbar-nav ms-auto">
         {% if user.is_authenticated %}

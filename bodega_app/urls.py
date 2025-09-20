@@ -2,13 +2,13 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 
-# muy importante para que las URLs tengan namespace "bodega"
-app_name = "bodega"
-
 urlpatterns = [
     # LOGIN / LOGOUT
     path('usuarios/login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('usuarios/logout/', auth_views.LogoutView.as_view(next_page='bodega:login'), name='logout'),
+
+    # SETUP: crear primer superusuario (solo si no hay usuarios)
+    path('setup/primer-admin/', views.primer_admin, name='primer_admin'),
 
     # HOME / DASHBOARD
     path('', views.dashboard, name='dashboard'),
@@ -39,4 +39,8 @@ urlpatterns = [
 
     # REPORTES
     path('reportes/', views.reportes, name='reportes'),
+
+    # NUEVO: creación de usuarios por admin
+    path('usuarios/crear/', views.usuarios_crear, name='usuarios_crear'),
 ]
+ 
