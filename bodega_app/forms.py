@@ -3,6 +3,54 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Producto, Proveedor, Compra, Usuario
 
 
+# ----------------------
+# Formularios de Usuario
+# ----------------------
+class RegistroInicialForm(UserCreationForm):
+    """
+    Form para crear el primer superusuario/admin.
+    Solo pide username y password1/password2.
+    El campo 'rol' se forzará a 'admin' en el save().
+    """
+    class Meta:
+        model = Usuario
+        fields = ["username", "password1", "password2"]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_staff = True
+        user.is_superuser = True
+        user.rol = "admin"
+        if commit:
+            user.save()
+        return user
+
+
+class UsuarioCrearForm(UserCreationForm):
+    """
+    Form para que un admin cree usuarios normales o admins.
+    Exponemos 'rol' como ChoiceField usando las choices del modelo.
+    """
+    rol = forms.ChoiceField(choices=Usuario.ROLES, initial="empleado")
+
+    class Meta:
+        model = Usuario
+        fields = ["username", "rol", "password1", "password2"]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.rol = self.cleaned_data["rol"]
+        # Si elige admin, damos permisos básicos de staff (opcional)
+        if user.rol == "admin":
+            user.is_staff = True
+        if commit:
+            user.save()
+        return user
+
+
+# ----------------------
+# Formularios existentes
+# ----------------------
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
@@ -41,28 +89,3 @@ class CompraForm(forms.ModelForm):
         if p <= 0:
             raise forms.ValidationError('El precio total debe ser mayor a 0.')
         return p
-
-
-# --- NUEVO: registro general de usuarios (por admin) ---
-class RegistroUsuarioForm(UserCreationForm):
-    rol = forms.ChoiceField(choices=Usuario.ROLES, initial='empleado')
-
-    class Meta(UserCreationForm.Meta):
-        model = Usuario
-        fields = ("username", "email", "rol")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Que email sea requerido
-        self.fields["email"].required = True
-
-
-# --- NUEVO: para crear el primer súperusuario cuando no hay usuarios ---
-class PrimerAdminForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
-        model = Usuario
-        fields = ("username", "email")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["email"].required = True
