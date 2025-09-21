@@ -42,4 +42,6 @@ urlpatterns = [
 
     # Reportes
     path("reportes/",                         views.reportes,           name="reportes"),
+
+    
 ]
