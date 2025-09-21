@@ -2,30 +2,25 @@
 {% block title %}Registro inicial{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <h2 class="mb-4">Crear Administrador</h2>
+<div class="container mt-4">
+  <h1 class="mb-3">Registro inicial</h1>
 
-    {% if messages %}
-      {% for m in messages %}
-        <div class="alert alert-{{ m.tags }}">{{ m }}</div>
-      {% endfor %}
+  {% if user.is_authenticated %}
+    {% if user.is_superuser %}
+      <div class="alert alert-success">
+        Ya existe un superusuario (tú). No se necesita registro inicial.
+      </div>
+      <a class="btn btn-primary" href="{% url 'bodega:dashboard' %}">Ir al dashboard</a>
+    {% else %}
+      <div class="alert alert-info">
+        Ya iniciaste sesión. Si necesitas permisos de administrador, solicita a un superusuario.
+      </div>
+      <a class="btn btn-secondary" href="{% url 'bodega:logout' %}">Cerrar sesión</a>
     {% endif %}
-
-    <form method="post" class="card card-body shadow-sm">
-      {% csrf_token %}
-      <div class="mb-3">
-        <label for="username" class="form-label">Usuario</label>
-        <input type="text" name="username" id="username" class="form-control" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="password" class="form-label">Contraseña</label>
-        <input type="password" name="password" id="password" class="form-control" required>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100">Crear Administrador</button>
-    </form>
-  </div>
+  {% else %}
+    <p>Este paso crea el primer usuario administrador del sistema.</p>
+    <a class="btn btn-primary" href="{% url 'bodega:usuarios_crear' %}">Crear usuario administrador</a>
+    <a class="btn btn-outline-secondary ms-2" href="{% url 'bodega:login' %}">Volver al login</a>
+  {% endif %}
 </div>
 {% endblock %}
