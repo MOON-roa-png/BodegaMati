@@ -12,3 +12,4 @@ staticfiles/
 # VSCode / IDE
 .vscode/
 .idea/
+.env
