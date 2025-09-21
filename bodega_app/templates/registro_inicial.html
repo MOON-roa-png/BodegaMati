@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block title %}Registro inicial{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6">
@@ -15,38 +14,23 @@
           {% endfor %}
         {% endif %}
 
-        {% if creado %}
-          <p class="mb-3">El usuario administrador fue creado correctamente.</p>
-          <a class="btn btn-primary" href="{% url 'bodega:login' %}">Ir al login</a>
-        {% else %}
-          {% if existe_superuser %}
-            <div class="alert alert-info">
-              Ya existe un superusuario. Usa el <a href="{% url 'bodega:login' %}">login</a>.
-            </div>
-          {% else %}
-            <form method="post" novalidate>
-              {% csrf_token %}
-              <div class="mb-3">
-                <label class="form-label">Usuario</label>
-                <input class="form-control" type="text" name="username" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input class="form-control" type="email" name="email" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Contraseña</label>
-                <input class="form-control" type="password" name="password1" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Confirmar contraseña</label>
-                <input class="form-control" type="password" name="password2" required />
-              </div>
-              <button class="btn btn-success" type="submit">Crear administrador</button>
-              <a href="{% url 'bodega:login' %}" class="btn btn-link">Volver al login</a>
-            </form>
-          {% endif %}
-        {% endif %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <input class="form-control" type="text" name="username" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input class="form-control" type="password" name="password1" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirmar contraseña</label>
+            <input class="form-control" type="password" name="password2" required />
+          </div>
+          <button class="btn btn-success" type="submit">Crear administrador</button>
+          <a href="{% url 'bodega:login' %}" class="btn btn-link">Volver al login</a>
+        </form>
       </div>
     </div>
   </div>

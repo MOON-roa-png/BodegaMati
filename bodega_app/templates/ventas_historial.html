@@ -15,9 +15,7 @@
       <td>
         <ul class="mb-2">
           {% for d in v.detalles.all %}
-          <li>
-            {{ d.producto.nombre }} - Cant: {{ d.cantidad }} - Subtotal: {{ d.subtotal }}
-          </li>
+          <li>{{ d.producto.nombre }} - Cant: {{ d.cantidad }} - Subtotal: {{ d.subtotal }}</li>
           {% endfor %}
         </ul>
       </td>

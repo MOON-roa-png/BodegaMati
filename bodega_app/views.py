@@ -30,26 +30,32 @@ def es_admin(user):
 # Setup inicial de usuarios
 # -------------------------
 def registro_inicial(request):
+    # Si ya existe cualquier usuario, redirige a login
     if Usuario.objects.exists():
         return redirect("bodega:login")
 
     if request.method == "POST":
         username = (request.POST.get("username") or "").strip()
-        password = (request.POST.get("password") or "").strip()
+        p1 = (request.POST.get("password1") or "").strip()
+        p2 = (request.POST.get("password2") or "").strip()
 
-        if not username or not password:
-            messages.error(request, "Usuario y contraseña son obligatorios.")
+        if not username or not p1 or not p2:
+            messages.error(request, "Usuario y contraseñas son obligatorios.")
+            return render(request, "registro_inicial.html")
+
+        if p1 != p2:
+            messages.error(request, "Las contraseñas no coinciden.")
             return render(request, "registro_inicial.html")
 
         if Usuario.objects.filter(username=username).exists():
             messages.error(request, "Ese nombre de usuario ya existe.")
             return render(request, "registro_inicial.html")
 
-        if len(password) < 4:
+        if len(p1) < 4:
             messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
             return render(request, "registro_inicial.html")
 
-        user = Usuario.objects.create_user(username=username, password=password)
+        user = Usuario.objects.create_user(username=username, password=p1)
         user.rol = "admin"
         user.is_staff = True
         user.is_superuser = True
@@ -58,7 +64,7 @@ def registro_inicial(request):
         messages.success(request, "Administrador creado. Ya puedes iniciar sesión.")
         return redirect("bodega:login")
 
-    return render(request, "registro_inicial.html")
+    return render(request, "registro_inicial.html", {"creado": False, "existe_superuser": False})
 
 @user_passes_test(es_admin, login_url="/usuarios/login/")
 def usuarios_crear(request):
@@ -292,8 +298,18 @@ def compras(request):
 @login_required(login_url="/usuarios/login/")
 def compras_editar(request, pk):
     compra = get_object_or_404(Compra, pk=pk)
-    if request.method != "POST":
-        return redirect("bodega:compras")
+
+    if request.method == "GET":
+        from django import forms
+        class _Form(forms.ModelForm):
+            class Meta:
+                model = Compra
+                fields = ["cantidad", "precio_total"]
+        form = _Form(instance=compra)
+        return render(request, "compras_form.html", {
+            "titulo": f"Editar compra #{compra.id}",
+            "form": form
+        })
 
     cantidad_str = request.POST.get("cantidad", "").strip()
     precio_total_str = request.POST.get("precio_total", "").strip()
@@ -436,7 +452,13 @@ def confirmar_venta(request):
 
     for item in carrito:
         p = productos_cache[item["producto_id"]]
-        DetalleVenta.objects.create(venta=venta, producto=p, cantidad=item["cantidad"])
+        # Guardar precio_unitario al momento de la venta
+        DetalleVenta.objects.create(
+            venta=venta,
+            producto=p,
+            cantidad=item["cantidad"],
+            precio_unitario=p.precio_venta
+        )
         p.stock = F("stock") - item["cantidad"]
         p.save(update_fields=["stock"])
 
@@ -445,6 +467,15 @@ def confirmar_venta(request):
 
     messages.success(request, f"Venta #{venta.id} confirmada.")
     return redirect("bodega:ventas")
+
+@login_required(login_url="/usuarios/login/")
+def ventas_historial(request):
+    ventas = (
+        Venta.objects
+        .prefetch_related("detalles__producto")
+        .order_by("-fecha")[:100]
+    )
+    return render(request, "ventas_historial.html", {"ventas": ventas})
 
 # -------------------------
 # Reportes

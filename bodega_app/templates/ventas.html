@@ -1,6 +1,5 @@
 {% extends 'layout.html' %}
 {% block title %}Ventas{% endblock %}
-
 {% block content %}
 <h1>Ventas</h1>
 
@@ -79,5 +78,6 @@
 <div class="d-flex gap-2">
   <a href="{% url 'bodega:confirmar_venta' %}" class="btn btn-success">Confirmar Venta</a>
   <a href="{% url 'bodega:ventas_vaciar' %}" class="btn btn-outline-secondary">Vaciar Carrito</a>
+  <a href="{% url 'bodega:ventas_historial' %}" class="btn btn-outline-primary ms-auto">Historial</a>
 </div>
 {% endblock %}

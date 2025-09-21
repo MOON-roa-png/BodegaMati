@@ -30,6 +30,7 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
+    @property
     def en_riesgo(self):
         return self.stock <= self.stock_minimo
 
@@ -53,6 +54,11 @@ class DetalleVenta(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre}"
+
+    @property
+    def subtotal(self):
+        pu = self.precio_unitario or self.producto.precio_venta
+        return pu * self.cantidad
 
 class Compra(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='compras')
