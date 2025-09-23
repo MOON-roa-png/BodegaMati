@@ -4,8 +4,6 @@ Django settings for BodegaMati project.
 from pathlib import Path
 from decouple import config
 import dj_database_url
-from django.core.management.utils import get_random_secret_key
-from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,7 +19,7 @@ CSRF_TRUSTED_ORIGINS = config(
     default="http://localhost:8000,http://127.0.0.1:8000"
 ).split(",")
 
-# Respeta HTTPS detrás del proxy de Render
+# Respeta HTTPS detrás del proxy (Render, etc.)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
@@ -40,8 +38,13 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = 'bodega_app.Usuario'
+
+# =========================
+# Auth redirects
+# =========================
 LOGIN_URL = '/usuarios/login/'
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/usuarios/login/'  # <-- agregado
 
 # =========================
 # Middleware
